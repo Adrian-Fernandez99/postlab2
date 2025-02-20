@@ -72,9 +72,9 @@ SETUP:
 
 // Main loop
 MAIN_LOOP:
-	CPI		R23, 0x00
-	BREQ	PASO
-	SBI		PINC, PC4
+	CPI		R23, 0x00		// se verifica si la alarma está apagada
+	BREQ	PASO			// Si esta apagada hacer caso omiso
+	SBI		PINC, PC4		// Si está encendido mantener led encendido
 PASO:
 	MOV		R20, R19		// movemos valor actual a calor anterior
 	OUT		PORTD, R22		// Matememos salidas encendidas
@@ -95,9 +95,9 @@ TIMER:
 	CLR		COUNTER			// Se reinicia el conteo de overflows
 	CALL	SUMA			// Se llama al incremento del contador
 	OUT		PORTC, R17		// Sale la señal
-	CP		R17, R21
-	BRNE	N_ALARMA
-	CALL	ALARMA
+	CP		R17, R21		
+	BRNE	N_ALARMA		// Si los registros del contador y el display son iguales
+	CALL	ALARMA			// Se manda a llamar la alarma
 N_ALARMA:
 	RJMP	MAIN_LOOP		// Regresa al main loop
 
@@ -160,13 +160,13 @@ UNDER:
 	RET
 
 ALARMA:
-	CLR		R17
-	CPI		R23, 0x00
-	BRNE	APAGAR
-	LDI		R23, 0x01
+	CLR		R17				// Se reinicia el contador
+	CPI		R23, 0x00		// Se mira el estado anterior del la alarma
+	BRNE	APAGAR			// Si no esta apagada se tiene que apagar
+	LDI		R23, 0x01		// Si esta apagada se enciende
 	RET
 APAGAR:
-	LDI		R23, 0x00
+	LDI		R23, 0x00		// Se apaga el registro de la alarm 
 	RET
 
 // Interrupt routines
