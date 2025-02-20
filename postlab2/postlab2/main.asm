@@ -19,8 +19,8 @@ Descripción:
 .org 0x0000
 .def COUNTER = R18			// Se define contador
 
-
-
+TABLA7SEG: .DB	0x7E, 0x30, 0x6D, 0x79, 0x33, 0x5B, 0x5F, 0x70, 0x7F, 0x7B, 0x77, 0x7F, 0x4E, 0x7E, 0x4F, 0x47
+//			  1,    2,    3,    4,    5,    6,    7,    8,    9,    A,    B,    C,    D,    F,    G,    H
 
 // Configurar el MCU
 	LDI R16, LOW(RAMEND)
@@ -64,10 +64,20 @@ SETUP:
 	LDI		R16, 0xFF		// Registro para el clock
 	LDI		R17, 0xFF		// Registro de contador (clock)
 //	LDI		R18, --			Se aparto el para el contador
-	LDI		R19, 0x00		
+	LDI		R19, 0x00		// Ingreso de los botones
+	LDI		R20, 0x00		// Comparaciön con el ingreso
+	LDI		R21, 0x00		// Registro para el contador
+	LDI		R22, 0x00		// Registro para subir el valor de la tabla
 
 // Main loop
 MAIN_LOOP:
+	MOV		R20, R19		// movemos valor actual a calor anterior
+	OUT		PORTD, R22		// Matememos salidas encendidas
+	IN		R19, PINB		// leemos el PINB
+	CP		R19, R20		// Comparamos si no es la misma lecura que antes
+	BREQ	TIMER			// Si es la misma regresamos	
+	CALL	DECREMENTO1				
+TIMER:
 	IN		R16, TIFR0		// Leer registro de interrupción de TIMER0
 	SBRS	R16, TOV0		// Salta si el bit 0 est "set" (TOV0 bit)
 	RJMP	MAIN_LOOP		// Reiniciar loop
@@ -141,6 +151,3 @@ UNDER:
 	RET
 
 // Interrupt routines
-
-TABLA7SEG: .DB	 0x60, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xF6, 0xEE, 0x3E, 0x4D, 0x76, 0x9E, 0x8E, 0xFC
-//					0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    A,    B,    C,    D,    E,    F
