@@ -19,8 +19,7 @@ Descripción:
 .org 0x0000
 .def COUNTER = R18			// Se define contador
 
-TABLA7SEG: .DB	 0x60, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xF6, 0xEE, 0x3E, 0x4D, 0x76, 0x9E, 0x8E, 0xFC
-//					0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    A,    B,    C,    D,    E,    F
+
 
 
 // Configurar el MCU
@@ -30,6 +29,8 @@ TABLA7SEG: .DB	 0x60, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xF6, 0xEE, 0x3E
 	OUT SPH, R16
 
 SETUP:
+	CALL	OVER
+
 // Configurar pines de entrada y salida (DDRx, PORTx, PINx)
 // PORTD como entrada con pull-up habilitado
 	LDI		R16, 0x00
@@ -58,6 +59,7 @@ SETUP:
 	STS		UCSR0B, R16
 
 // Realizar variables
+	LPM		R22, Z
 
 	LDI		R16, 0xFF		// Registro para el clock
 	LDI		R17, 0xFF		// Registro de contador (clock)
@@ -95,61 +97,37 @@ SUMA:						// Función para el incremento del primer contador
 	RET
 
 DECREMENTO1:
-	LDI		R17, 0x1E		// Valor que esperamos para decrementar el contador 1		
-	CP		R16, R17		// Comparamos con la entrada
+	LDI		R20, 0x1E		// Valor que esperamos para decrementar el contador 1		
+	CP		R19, R20		// Comparamos con la entrada
 	BRNE	INCREMENTO1		// Si no es el valor que esperamos pasamos a otra función
-	CALL	DELAY			// Realizamos antirebote
-	IN		R16, PINB		// Leemos otra vez
-	CP		R17, R16		// Comparamos
-	BRNE	MAIN_LOOP		// Si fue una lectura falsa se regresa al contador
-	CALL	BOTON_SUELTO	// Se espera a que se libere el boton
 	CALL	RESTA1			// Se realiza el decremento
 	RET						// Se regresa al incio
 
 INCREMENTO1:				// La logica es muy parecida
-	LDI		R17, 0x1D		// Nuevamente valor que se espera para incrementar
-	CP		R16, R17		// Se compara si no es el valro se va a otra función
-	BRNE	CONTADOR		// Si es el valor se realiza el mismo sistema de antirebote
-	CALL	DELAY
-	IN		R16, PINB
-	CP		R17, R16
-	BRNE	MIAN_LOOP
-	CALL	BOTON_SUELTO2	// Siempre se verifica que se suelte el botón
+	LDI		R20, 0x1D		// Nuevamente valor que se espera para incrementar
+	CP		R19, R20		// Se compara si no es el valro se va a otra función
+	BRNE	MAIN_LOOP		// Si es el valor se realiza el mismo sistema de antirebote
 	CALL	SUMA1			// Se realiza el incremento
 	RET						// Se regresa al incio
 	
 SUMA1:						// Función para el incremento del primer contador
-	INC		R19				// Se incrementa el valor
+	INC		R21				// Se incrementa el valor
 	ADIW	Z, 1			// Se incrementa el valor en el puntero de la tabla
-	SBRC	R19, 4			// Se observa si tiene más de 4 bits
+	SBRC	R21, 4			// Se observa si tiene más de 4 bits
 	CALL	OVER			// En caso de overflow y debe regresar el puntero a 0
-	SBRC	R19, 4			// Se observa si tiene más de 4 bits
-	LDI		R19, 0x00		// En caso de overflow y debe regresar a 0
+	SBRC	R21, 4			// Se observa si tiene más de 4 bits
+	LDI		R21, 0x00		// En caso de overflow y debe regresar a 0
 	LPM		R22, Z			// Subir valor del puntero a registro
 	RET
 
 RESTA1:						// Función para el decremento del primer contador
-	DEC		R19				// Se decrementa el valor
+	DEC		R21				// Se decrementa el valor
 	SBIW	Z, 1			// Se decrementa el valor en el puntero de la tabla
-	SBRC	R19, 4			// Se observa si tiene más de 4 bits
+	SBRC	R21, 4			// Se observa si tiene más de 4 bits
 	CALL	UNDER			// En caso de overflow y debe regresar el puntero a 0
-	SBRC	R19, 4			// Se observa si tiene más de 4 bits
-	LDI		R19, 0x0F		// En ese caso es underflow y debe regresar a F
+	SBRC	R21, 4			// Se observa si tiene más de 4 bits
+	LDI		R21, 0x0F		// En ese caso es underflow y debe regresar a F
 	LPM		R22, Z			// Subir valor del puntero a registro
-	RET
-
-BOTON_SUELTO:				// Función para esperar a que se suelte el boton
-	CALL	DELAY			// Se espera un momento
-	IN		R16, PINB		// Se lee otra vez
-	SBIS	PINB, 0			// Hasta que el boton deje de estar apachado (bit = 1) se salta
-	RJMP	BOTON_SUELTO	// De lo contrario se vuelve a empezar
-	RET
-		
-BOTON_SUELTO2:				// Función para esperar a que se suelte el boton
-	CALL	DELAY			// Misma logica, distinto bit verificado
-	IN		R16, PINB
-	SBIS	PINB, 1
-	RJMP	BOTON_SUELTO2
 	RET
 
 OVER:
@@ -163,3 +141,6 @@ UNDER:
 	RET
 
 // Interrupt routines
+
+TABLA7SEG: .DB	 0x60, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xF6, 0xEE, 0x3E, 0x4D, 0x76, 0x9E, 0x8E, 0xFC
+//					0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    A,    B,    C,    D,    E,    F
