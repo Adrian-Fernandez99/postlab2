@@ -93,7 +93,7 @@ SUMA:						// Función para el incremento del primer contador
 	SBRC	R17, 4			// Se observa si tiene más de 4 bits
 	LDI		R17, 0x00		// En ese caso es overflow y debe regresar a 0
 	RET
-	/*
+
 DECREMENTO1:
 	LDI		R17, 0x1E		// Valor que esperamos para decrementar el contador 1		
 	CP		R16, R17		// Comparamos con la entrada
@@ -101,7 +101,7 @@ DECREMENTO1:
 	CALL	DELAY			// Realizamos antirebote
 	IN		R16, PINB		// Leemos otra vez
 	CP		R17, R16		// Comparamos
-	BRNE	CONTADOR		// Si fue una lectura falsa se regresa al contador
+	BRNE	MAIN_LOOP		// Si fue una lectura falsa se regresa al contador
 	CALL	BOTON_SUELTO	// Se espera a que se libere el boton
 	CALL	RESTA1			// Se realiza el decremento
 	RET						// Se regresa al incio
@@ -113,9 +113,53 @@ INCREMENTO1:				// La logica es muy parecida
 	CALL	DELAY
 	IN		R16, PINB
 	CP		R17, R16
-	BRNE	CONTADOR
+	BRNE	MIAN_LOOP
 	CALL	BOTON_SUELTO2	// Siempre se verifica que se suelte el botón
 	CALL	SUMA1			// Se realiza el incremento
 	RET						// Se regresa al incio
-	*/
+	
+SUMA1:						// Función para el incremento del primer contador
+	INC		R19				// Se incrementa el valor
+	ADIW	Z, 1			// Se incrementa el valor en el puntero de la tabla
+	SBRC	R19, 4			// Se observa si tiene más de 4 bits
+	CALL	OVER			// En caso de overflow y debe regresar el puntero a 0
+	SBRC	R19, 4			// Se observa si tiene más de 4 bits
+	LDI		R19, 0x00		// En caso de overflow y debe regresar a 0
+	LPM		R22, Z			// Subir valor del puntero a registro
+	RET
+
+RESTA1:						// Función para el decremento del primer contador
+	DEC		R19				// Se decrementa el valor
+	SBIW	Z, 1			// Se decrementa el valor en el puntero de la tabla
+	SBRC	R19, 4			// Se observa si tiene más de 4 bits
+	CALL	UNDER			// En caso de overflow y debe regresar el puntero a 0
+	SBRC	R19, 4			// Se observa si tiene más de 4 bits
+	LDI		R19, 0x0F		// En ese caso es underflow y debe regresar a F
+	LPM		R22, Z			// Subir valor del puntero a registro
+	RET
+
+BOTON_SUELTO:				// Función para esperar a que se suelte el boton
+	CALL	DELAY			// Se espera un momento
+	IN		R16, PINB		// Se lee otra vez
+	SBIS	PINB, 0			// Hasta que el boton deje de estar apachado (bit = 1) se salta
+	RJMP	BOTON_SUELTO	// De lo contrario se vuelve a empezar
+	RET
+		
+BOTON_SUELTO2:				// Función para esperar a que se suelte el boton
+	CALL	DELAY			// Misma logica, distinto bit verificado
+	IN		R16, PINB
+	SBIS	PINB, 1
+	RJMP	BOTON_SUELTO2
+	RET
+
+OVER:
+	LDI	ZL, LOW(TABLA7SEG << 1)
+	LDI	ZH, HIGH(TABLA7SEG << 1)
+	RET
+
+UNDER:
+	LDI	ZL, LOW((TABLA7SEG + 15) << 0)
+	LDI	ZH, HIGH((TABLA7SEG + 15) << 0)
+	RET
+
 // Interrupt routines
