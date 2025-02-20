@@ -68,9 +68,14 @@ SETUP:
 	LDI		R20, 0x00		// Comparaciön con el ingreso
 	LDI		R21, 0x00		// Registro para el contador
 	LDI		R22, 0x00		// Registro para subir el valor de la tabla
+	LDI		R23, 0x00		// Registro para alarma
 
 // Main loop
 MAIN_LOOP:
+	CPI		R23, 0x00
+	BREQ	PASO
+	SBI		PINC, PC4
+PASO:
 	MOV		R20, R19		// movemos valor actual a calor anterior
 	OUT		PORTD, R22		// Matememos salidas encendidas
 	IN		R19, PINB		// leemos el PINB
@@ -90,6 +95,10 @@ TIMER:
 	CLR		COUNTER			// Se reinicia el conteo de overflows
 	CALL	SUMA			// Se llama al incremento del contador
 	OUT		PORTC, R17		// Sale la señal
+	CP		R17, R21
+	BRNE	N_ALARMA
+	CALL	ALARMA
+N_ALARMA:
 	RJMP	MAIN_LOOP		// Regresa al main loop
 
 // NON-Interrupt subroutines
@@ -141,13 +150,23 @@ RESTA1:						// Función para el decremento del primer contador
 	RET
 
 OVER:
-	LDI	ZL, LOW(TABLA7SEG << 1)
-	LDI	ZH, HIGH(TABLA7SEG << 1)
+	LDI		ZL, LOW(TABLA7SEG << 1)				// Ingresa a Z los registros de la tabla más bajos
+	LDI		ZH, HIGH(TABLA7SEG << 1)			
 	RET
 
 UNDER:
-	LDI	ZL, LOW((TABLA7SEG + 15) << 0)
-	LDI	ZH, HIGH((TABLA7SEG + 15) << 0)
+	LDI		ZL, LOW((TABLA7SEG + 15) << 0)		// Ingresa a Z los registros de la tabla más altos
+	LDI		ZH, HIGH((TABLA7SEG + 15) << 0)
+	RET
+
+ALARMA:
+	CLR		R17
+	CPI		R23, 0x00
+	BRNE	APAGAR
+	LDI		R23, 0x01
+	RET
+APAGAR:
+	LDI		R23, 0x00
 	RET
 
 // Interrupt routines
