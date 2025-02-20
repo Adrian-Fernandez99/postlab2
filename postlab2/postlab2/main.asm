@@ -73,9 +73,9 @@ SETUP:
 // Main loop
 MAIN_LOOP:
 	CPI		R23, 0x00		// se verifica si la alarma está apagada
-	BREQ	PASO			// Si esta apagada hacer caso omiso
+	BREQ	CONTADOR			// Si esta apagada hacer caso omiso
 	SBI		PINC, PC4		// Si está encendido mantener led encendido
-PASO:
+CONTADOR:
 	MOV		R20, R19		// movemos valor actual a calor anterior
 	OUT		PORTD, R22		// Matememos salidas encendidas
 	IN		R19, PINB		// leemos el PINB
@@ -104,7 +104,7 @@ N_ALARMA:
 // NON-Interrupt subroutines
 INIT_TMR0:
 	LDI		R16, (1 << CS00) | (1 << CS02)
-	OUT		TCCR0B, R16		// Setear prescaler del TIMER 0 a 8
+	OUT		TCCR0B, R16		// Setear prescaler del TIMER 0 a 1024
 	LDI		R16, 158
 	OUT		TCNT0, R16		// Cargar valor inicial en TCNT0
 	RET
